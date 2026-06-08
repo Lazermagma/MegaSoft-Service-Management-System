@@ -35,25 +35,25 @@ export default function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b px-2 py-3 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0">
+      <SidebarHeader className="border-b border-sidebar-border px-2 py-4 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0">
         <Link
           href="/"
           className="flex items-center justify-center overflow-hidden px-2 group-data-[collapsible=icon]:px-0"
         >
           <Image
-            src="/megasoft-logo.png"
+            src="/megasoft-logo-light.png"
             alt="MegaSoft"
-            width={140}
-            height={48}
+            width={200}
+            height={71}
             priority
-            className="h-7 w-auto group-data-[collapsible=icon]:hidden"
+            className="h-12 w-auto group-data-[collapsible=icon]:hidden"
           />
           <Image
-            src="/megasoft-logo.png"
+            src="/megasoft-icon.png"
             alt="MegaSoft"
-            width={48}
-            height={48}
-            className="hidden size-8 shrink-0 object-cover object-left group-data-[collapsible=icon]:block"
+            width={40}
+            height={40}
+            className="hidden size-10 shrink-0 object-contain group-data-[collapsible=icon]:block"
           />
         </Link>
       </SidebarHeader>
@@ -69,7 +69,7 @@ export default function AppSidebar() {
                     isActive={pathname === item.href}
                     tooltip={item.label}
                     render={<Link href={item.href} />}
-                    className="hover:bg-brand-muted hover:text-brand data-active:bg-brand data-active:text-brand-foreground data-active:font-medium [&_svg]:text-current"
+                    className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-brand data-active:bg-brand data-active:text-brand-foreground data-active:font-medium [&_svg]:text-current"
                   >
                     <item.icon />
                     <span className="group-data-[collapsible=icon]:hidden">

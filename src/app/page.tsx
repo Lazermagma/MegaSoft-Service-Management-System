@@ -34,10 +34,10 @@ export default function Home() {
           <Image
             src="/megasoft-logo.png"
             alt="MegaSoft"
-            width={156}
-            height={52}
+            width={200}
+            height={71}
             priority
-            className="h-8 w-auto"
+            className="h-12 w-auto"
           />
           <Link
             href="/dashboard"
@@ -93,7 +93,7 @@ export default function Home() {
       <footer className="mt-auto border-t">
         <div className="mx-auto w-full max-w-5xl px-6 py-6 text-center text-sm text-zinc-500">
           © {new Date().getFullYear()} MegaSoft.
-          Management.
+       
         </div>
       </footer>
     </div>
