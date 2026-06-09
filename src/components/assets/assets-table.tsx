@@ -8,8 +8,11 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { DataTableShell } from "@/components/shared/data-table-shell";
 import { TableFilters } from "@/components/shared/table-filters";
 import { SortableHeader } from "@/components/shared/sortable-header";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useTableSort } from "@/hooks/use-table-sort";
-import { AssetFormDialog, useAssetActions } from "@/components/assets/asset-form-dialog";
+import { deleteAsset } from "@/actions/assets";
+import { useRouter } from "next/navigation";
+import { AssetFormDialog } from "@/components/assets/asset-form-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -37,11 +40,14 @@ function formatDate(value: string | null) {
 }
 
 export function AssetsTable({ assets, users }: AssetsTableProps) {
-  const { removeAsset } = useAssetActions();
+  const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const filteredAssets = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -87,6 +93,25 @@ export function AssetsTable({ assets, users }: AssetsTableProps) {
   function openEdit(asset: Asset) {
     setSelectedAsset(asset);
     setDialogOpen(true);
+  }
+
+  function openDelete(asset: Asset) {
+    setDeleteError(null);
+    setAssetToDelete(asset);
+  }
+
+  async function confirmDelete() {
+    if (!assetToDelete) return;
+    setDeletePending(true);
+    setDeleteError(null);
+    const result = await deleteAsset(assetToDelete.asset_id);
+    setDeletePending(false);
+    if (result.error) {
+      setDeleteError(result.error);
+      return;
+    }
+    setAssetToDelete(null);
+    router.refresh();
   }
 
   return (
@@ -202,15 +227,7 @@ export function AssetsTable({ assets, users }: AssetsTableProps) {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => {
-                            if (
-                              confirm(
-                                `Delete this ${asset.asset_type}? This action cannot be undone.`
-                              )
-                            ) {
-                              removeAsset(asset.asset_id);
-                            }
-                          }}
+                          onClick={() => openDelete(asset)}
                         >
                           <Trash2 className="size-4" />
                           Delete
@@ -230,6 +247,24 @@ export function AssetsTable({ assets, users }: AssetsTableProps) {
         onOpenChange={setDialogOpen}
         users={users}
         asset={selectedAsset}
+      />
+
+      <ConfirmDialog
+        open={Boolean(assetToDelete)}
+        onOpenChange={(open) => {
+          if (!open) setAssetToDelete(null);
+        }}
+        title="Delete asset"
+        description={
+          assetToDelete
+            ? `Delete this ${assetToDelete.asset_type} (#${assetToDelete.asset_id})? This action cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        destructive
+        pending={deletePending}
+        error={deleteError}
+        onConfirm={confirmDelete}
       />
     </>
   );

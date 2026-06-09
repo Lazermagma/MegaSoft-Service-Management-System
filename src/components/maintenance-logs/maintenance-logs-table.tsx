@@ -6,11 +6,11 @@ import type { AppUser, Asset, MaintenanceLog } from "@/lib/types/database";
 import { DataTableShell } from "@/components/shared/data-table-shell";
 import { TableFilters } from "@/components/shared/table-filters";
 import { SortableHeader } from "@/components/shared/sortable-header";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useTableSort } from "@/hooks/use-table-sort";
-import {
-  MaintenanceLogFormDialog,
-  useMaintenanceLogActions,
-} from "@/components/maintenance-logs/maintenance-log-form-dialog";
+import { deleteMaintenanceLog } from "@/actions/maintenance-logs";
+import { useRouter } from "next/navigation";
+import { MaintenanceLogFormDialog } from "@/components/maintenance-logs/maintenance-log-form-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -46,10 +46,13 @@ export function MaintenanceLogsTable({
   assets,
   technicians,
 }: MaintenanceLogsTableProps) {
-  const { removeLog } = useMaintenanceLogActions();
+  const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<MaintenanceLog | null>(null);
   const [search, setSearch] = useState("");
+  const [logToDelete, setLogToDelete] = useState<MaintenanceLog | null>(null);
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const filteredLogs = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -90,6 +93,25 @@ export function MaintenanceLogsTable({
   function openEdit(log: MaintenanceLog) {
     setSelectedLog(log);
     setDialogOpen(true);
+  }
+
+  function openDelete(log: MaintenanceLog) {
+    setDeleteError(null);
+    setLogToDelete(log);
+  }
+
+  async function confirmDelete() {
+    if (!logToDelete) return;
+    setDeletePending(true);
+    setDeleteError(null);
+    const result = await deleteMaintenanceLog(logToDelete.log_id);
+    setDeletePending(false);
+    if (result.error) {
+      setDeleteError(result.error);
+      return;
+    }
+    setLogToDelete(null);
+    router.refresh();
   }
 
   return (
@@ -178,15 +200,7 @@ export function MaintenanceLogsTable({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => {
-                            if (
-                              confirm(
-                                "Delete this maintenance log? This action cannot be undone."
-                              )
-                            ) {
-                              removeLog(log.log_id);
-                            }
-                          }}
+                          onClick={() => openDelete(log)}
                         >
                           <Trash2 className="size-4" />
                           Delete
@@ -207,6 +221,24 @@ export function MaintenanceLogsTable({
         assets={assets}
         technicians={technicians}
         log={selectedLog}
+      />
+
+      <ConfirmDialog
+        open={Boolean(logToDelete)}
+        onOpenChange={(open) => {
+          if (!open) setLogToDelete(null);
+        }}
+        title="Delete maintenance log"
+        description={
+          logToDelete
+            ? `Delete maintenance log #${logToDelete.log_id}? This action cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        destructive
+        pending={deletePending}
+        error={deleteError}
+        onConfirm={confirmDelete}
       />
     </>
   );

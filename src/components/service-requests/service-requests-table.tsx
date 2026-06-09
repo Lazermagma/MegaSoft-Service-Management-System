@@ -20,6 +20,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { DataTableShell } from "@/components/shared/data-table-shell";
 import { TableFilters } from "@/components/shared/table-filters";
 import { SortableHeader } from "@/components/shared/sortable-header";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useTableSort } from "@/hooks/use-table-sort";
 import { AssignTechnicianDialog } from "@/components/service-requests/assign-technician-dialog";
 import { ServiceRequestFormDialog } from "@/components/service-requests/service-request-form-dialog";
@@ -74,6 +75,11 @@ export function ServiceRequestsTable({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [requestToDelete, setRequestToDelete] = useState<ServiceRequest | null>(
+    null
+  );
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const filteredRequests = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -139,20 +145,22 @@ export function ServiceRequestsTable({
     setStatusOpen(true);
   }
 
-  async function removeRequest(request: ServiceRequest) {
-    if (
-      !confirm(
-        `Delete "${request.title}"? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
+  function openDelete(request: ServiceRequest) {
+    setDeleteError(null);
+    setRequestToDelete(request);
+  }
 
-    const result = await deleteServiceRequest(request.request_id);
+  async function confirmDelete() {
+    if (!requestToDelete) return;
+    setDeletePending(true);
+    setDeleteError(null);
+    const result = await deleteServiceRequest(requestToDelete.request_id);
+    setDeletePending(false);
     if (result.error) {
-      alert(result.error);
+      setDeleteError(result.error);
       return;
     }
+    setRequestToDelete(null);
     router.refresh();
   }
 
@@ -320,7 +328,7 @@ export function ServiceRequestsTable({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => removeRequest(request)}
+                          onClick={() => openDelete(request)}
                         >
                           <Trash2 className="size-4" />
                           Delete
@@ -355,6 +363,24 @@ export function ServiceRequestsTable({
         open={statusOpen}
         onOpenChange={setStatusOpen}
         request={selectedRequest}
+      />
+
+      <ConfirmDialog
+        open={Boolean(requestToDelete)}
+        onOpenChange={(open) => {
+          if (!open) setRequestToDelete(null);
+        }}
+        title="Delete service request"
+        description={
+          requestToDelete
+            ? `Delete "${requestToDelete.title}"? This action cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        destructive
+        pending={deletePending}
+        error={deleteError}
+        onConfirm={confirmDelete}
       />
     </>
   );

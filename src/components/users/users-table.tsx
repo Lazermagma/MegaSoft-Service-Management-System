@@ -8,7 +8,10 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { DataTableShell } from "@/components/shared/data-table-shell";
 import { TableFilters } from "@/components/shared/table-filters";
 import { SortableHeader } from "@/components/shared/sortable-header";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useTableSort } from "@/hooks/use-table-sort";
+import { deleteUser } from "@/actions/users";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { UserFormDialog, useUserActions } from "@/components/users/user-form-dialog";
+import { UserFormDialog } from "@/components/users/user-form-dialog";
 
 type UsersTableProps = {
   users: AppUser[];
@@ -32,11 +35,14 @@ type UsersTableProps = {
 };
 
 export function UsersTable({ users, departments }: UsersTableProps) {
-  const { removeUser } = useUserActions();
+  const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const filteredUsers = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -82,6 +88,25 @@ export function UsersTable({ users, departments }: UsersTableProps) {
   function openEdit(user: AppUser) {
     setSelectedUser(user);
     setDialogOpen(true);
+  }
+
+  function openDelete(user: AppUser) {
+    setDeleteError(null);
+    setUserToDelete(user);
+  }
+
+  async function confirmDelete() {
+    if (!userToDelete) return;
+    setDeletePending(true);
+    setDeleteError(null);
+    const result = await deleteUser(userToDelete.user_id);
+    setDeletePending(false);
+    if (result.error) {
+      setDeleteError(result.error);
+      return;
+    }
+    setUserToDelete(null);
+    router.refresh();
   }
 
   return (
@@ -194,15 +219,7 @@ export function UsersTable({ users, departments }: UsersTableProps) {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => {
-                            if (
-                              confirm(
-                                `Delete ${user.full_name}? This action cannot be undone.`
-                              )
-                            ) {
-                              removeUser(user.user_id);
-                            }
-                          }}
+                          onClick={() => openDelete(user)}
                         >
                           <Trash2 className="size-4" />
                           Delete
@@ -222,6 +239,24 @@ export function UsersTable({ users, departments }: UsersTableProps) {
         onOpenChange={setDialogOpen}
         departments={departments}
         user={selectedUser}
+      />
+
+      <ConfirmDialog
+        open={Boolean(userToDelete)}
+        onOpenChange={(open) => {
+          if (!open) setUserToDelete(null);
+        }}
+        title="Delete user"
+        description={
+          userToDelete
+            ? `Delete ${userToDelete.full_name}? This action cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        destructive
+        pending={deletePending}
+        error={deleteError}
+        onConfirm={confirmDelete}
       />
     </>
   );
