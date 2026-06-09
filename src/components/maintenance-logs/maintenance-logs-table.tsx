@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import type { AppUser, Asset, MaintenanceLog } from "@/lib/types/database";
 import { DataTableShell } from "@/components/shared/data-table-shell";
+import { TableFilters } from "@/components/shared/table-filters";
 import {
   MaintenanceLogFormDialog,
   useMaintenanceLogActions,
@@ -46,6 +47,17 @@ export function MaintenanceLogsTable({
   const { removeLog } = useMaintenanceLogActions();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<MaintenanceLog | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filteredLogs = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return logs;
+    return logs.filter(
+      (log) =>
+        (log.asset?.asset_type?.toLowerCase().includes(query) ?? false) ||
+        (log.technician?.full_name?.toLowerCase().includes(query) ?? false)
+    );
+  }, [logs, search]);
 
   function openCreate() {
     setSelectedLog(null);
@@ -69,6 +81,11 @@ export function MaintenanceLogsTable({
           </Button>
         }
       >
+        <TableFilters
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search by asset or technician..."
+        />
         <Table>
           <TableHeader>
             <TableRow>
@@ -79,14 +96,14 @@ export function MaintenanceLogsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {logs.length === 0 ? (
+            {filteredLogs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-muted-foreground">
-                  No maintenance logs found.
+                  No maintenance logs match your search.
                 </TableCell>
               </TableRow>
             ) : (
-              logs.map((log) => (
+              filteredLogs.map((log) => (
                 <TableRow key={log.log_id}>
                   <TableCell className="font-medium">
                     {log.asset?.asset_type ?? "—"}

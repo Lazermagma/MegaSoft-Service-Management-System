@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
-import { roleVariant } from "@/lib/constants/statuses";
+import { roleVariant, USER_ROLES } from "@/lib/constants/statuses";
 import type { AppUser, Department } from "@/lib/types/database";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { DataTableShell } from "@/components/shared/data-table-shell";
+import { TableFilters } from "@/components/shared/table-filters";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -32,6 +33,22 @@ export function UsersTable({ users, departments }: UsersTableProps) {
   const { removeUser } = useUserActions();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+
+  const filteredUsers = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return users.filter((user) => {
+      const matchesSearch =
+        !query ||
+        user.full_name.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query) ||
+        (user.department?.department_name?.toLowerCase().includes(query) ??
+          false);
+      const matchesRole = roleFilter === "all" || user.role === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+  }, [users, search, roleFilter]);
 
   function openCreate() {
     setSelectedUser(null);
@@ -55,6 +72,22 @@ export function UsersTable({ users, departments }: UsersTableProps) {
           </Button>
         }
       >
+        <TableFilters
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search by name, email, or department..."
+          filters={[
+            {
+              value: roleFilter,
+              onChange: setRoleFilter,
+              placeholder: "Role",
+              options: [
+                { value: "all", label: "All Roles" },
+                ...USER_ROLES.map((role) => ({ value: role, label: role })),
+              ],
+            },
+          ]}
+        />
         <Table>
           <TableHeader>
             <TableRow>
@@ -66,14 +99,14 @@ export function UsersTable({ users, departments }: UsersTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-muted-foreground">
-                  No users found.
+                  No users match your search.
                 </TableCell>
               </TableRow>
             ) : (
-              users.map((user) => (
+              filteredUsers.map((user) => (
                 <TableRow key={user.user_id}>
                   <TableCell className="font-medium">{user.full_name}</TableCell>
                   <TableCell>{user.email}</TableCell>

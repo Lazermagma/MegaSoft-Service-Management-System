@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   MoreHorizontal,
   Pencil,
@@ -12,10 +12,13 @@ import {
 import {
   priorityVariant,
   requestStatusVariant,
+  REQUEST_PRIORITIES,
+  REQUEST_STATUSES,
 } from "@/lib/constants/statuses";
 import type { AppUser, Asset, ServiceRequest } from "@/lib/types/database";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { DataTableShell } from "@/components/shared/data-table-shell";
+import { TableFilters } from "@/components/shared/table-filters";
 import { AssignTechnicianDialog } from "@/components/service-requests/assign-technician-dialog";
 import { ServiceRequestFormDialog } from "@/components/service-requests/service-request-form-dialog";
 import { UpdateStatusDialog } from "@/components/service-requests/update-status-dialog";
@@ -66,6 +69,26 @@ export function ServiceRequestsTable({
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(
     null
   );
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+
+  const filteredRequests = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return requests.filter((request) => {
+      const matchesSearch =
+        !query ||
+        request.title.toLowerCase().includes(query) ||
+        (request.assigned_to?.full_name?.toLowerCase().includes(query) ??
+          false) ||
+        (request.asset?.asset_type?.toLowerCase().includes(query) ?? false);
+      const matchesStatus =
+        statusFilter === "all" || request.status === statusFilter;
+      const matchesPriority =
+        priorityFilter === "all" || request.priority === priorityFilter;
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+  }, [requests, search, statusFilter, priorityFilter]);
 
   function openCreate() {
     setSelectedRequest(null);
@@ -116,6 +139,37 @@ export function ServiceRequestsTable({
           </Button>
         }
       >
+        <TableFilters
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search by title, assignee, or asset..."
+          filters={[
+            {
+              value: statusFilter,
+              onChange: setStatusFilter,
+              placeholder: "Status",
+              options: [
+                { value: "all", label: "All Statuses" },
+                ...REQUEST_STATUSES.map((status) => ({
+                  value: status,
+                  label: status,
+                })),
+              ],
+            },
+            {
+              value: priorityFilter,
+              onChange: setPriorityFilter,
+              placeholder: "Priority",
+              options: [
+                { value: "all", label: "All Priorities" },
+                ...REQUEST_PRIORITIES.map((priority) => ({
+                  value: priority,
+                  label: priority,
+                })),
+              ],
+            },
+          ]}
+        />
         <Table>
           <TableHeader>
             <TableRow>
@@ -129,14 +183,14 @@ export function ServiceRequestsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {requests.length === 0 ? (
+            {filteredRequests.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-muted-foreground">
-                  No service requests found.
+                  No service requests match your search.
                 </TableCell>
               </TableRow>
             ) : (
-              requests.map((request) => (
+              filteredRequests.map((request) => (
                 <TableRow key={request.request_id}>
                   <TableCell>
                     <div>
