@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   MoreHorizontal,
   Pencil,
@@ -19,6 +19,8 @@ import type { AppUser, Asset, ServiceRequest } from "@/lib/types/database";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { DataTableShell } from "@/components/shared/data-table-shell";
 import { TableFilters } from "@/components/shared/table-filters";
+import { SortableHeader } from "@/components/shared/sortable-header";
+import { useTableSort } from "@/hooks/use-table-sort";
 import { AssignTechnicianDialog } from "@/components/service-requests/assign-technician-dialog";
 import { ServiceRequestFormDialog } from "@/components/service-requests/service-request-form-dialog";
 import { UpdateStatusDialog } from "@/components/service-requests/update-status-dialog";
@@ -89,6 +91,33 @@ export function ServiceRequestsTable({
       return matchesSearch && matchesStatus && matchesPriority;
     });
   }, [requests, search, statusFilter, priorityFilter]);
+
+  const getSortValue = useCallback((request: ServiceRequest, key: string) => {
+    switch (key) {
+      case "request_id":
+        return request.request_id;
+      case "title":
+        return request.title;
+      case "priority":
+        return REQUEST_PRIORITIES.indexOf(request.priority);
+      case "status":
+        return REQUEST_STATUSES.indexOf(request.status);
+      case "asset":
+        return request.asset?.asset_type ?? "";
+      case "assigned_to":
+        return request.assigned_to?.full_name ?? "";
+      case "created_at":
+        return request.created_at;
+      default:
+        return null;
+    }
+  }, []);
+
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort(
+    filteredRequests,
+    getSortValue,
+    { key: "created_at", dir: "desc" }
+  );
 
   function openCreate() {
     setSelectedRequest(null);
@@ -173,25 +202,72 @@ export function ServiceRequestsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Asset</TableHead>
-              <TableHead>Assigned To</TableHead>
-              <TableHead>Created</TableHead>
+              <SortableHeader
+                label="ID"
+                sortKey="request_id"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+                className="w-16"
+              />
+              <SortableHeader
+                label="Title"
+                sortKey="title"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
+              <SortableHeader
+                label="Priority"
+                sortKey="priority"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
+              <SortableHeader
+                label="Status"
+                sortKey="status"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
+              <SortableHeader
+                label="Asset"
+                sortKey="asset"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
+              <SortableHeader
+                label="Assigned To"
+                sortKey="assigned_to"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
+              <SortableHeader
+                label="Created"
+                sortKey="created_at"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
               <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredRequests.length === 0 ? (
+            {sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-muted-foreground">
+                <TableCell colSpan={8} className="text-muted-foreground">
                   No service requests match your search.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredRequests.map((request) => (
+              sorted.map((request) => (
                 <TableRow key={request.request_id}>
+                  <TableCell className="text-muted-foreground">
+                    #{request.request_id}
+                  </TableCell>
                   <TableCell>
                     <div>
                       <p className="font-medium">{request.title}</p>

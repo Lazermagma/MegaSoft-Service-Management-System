@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import type { AppUser, Asset, MaintenanceLog } from "@/lib/types/database";
 import { DataTableShell } from "@/components/shared/data-table-shell";
 import { TableFilters } from "@/components/shared/table-filters";
+import { SortableHeader } from "@/components/shared/sortable-header";
+import { useTableSort } from "@/hooks/use-table-sort";
 import {
   MaintenanceLogFormDialog,
   useMaintenanceLogActions,
@@ -59,6 +61,27 @@ export function MaintenanceLogsTable({
     );
   }, [logs, search]);
 
+  const getSortValue = useCallback((log: MaintenanceLog, key: string) => {
+    switch (key) {
+      case "log_id":
+        return log.log_id;
+      case "asset":
+        return log.asset?.asset_type ?? "";
+      case "technician":
+        return log.technician?.full_name ?? "";
+      case "maintenance_datenotes":
+        return log.maintenance_datenotes ?? "";
+      default:
+        return null;
+    }
+  }, []);
+
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort(
+    filteredLogs,
+    getSortValue,
+    { key: "maintenance_datenotes", dir: "desc" }
+  );
+
   function openCreate() {
     setSelectedLog(null);
     setDialogOpen(true);
@@ -89,22 +112,51 @@ export function MaintenanceLogsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Asset</TableHead>
-              <TableHead>Technician</TableHead>
-              <TableHead>Date</TableHead>
+              <SortableHeader
+                label="ID"
+                sortKey="log_id"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+                className="w-16"
+              />
+              <SortableHeader
+                label="Asset"
+                sortKey="asset"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
+              <SortableHeader
+                label="Technician"
+                sortKey="technician"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
+              <SortableHeader
+                label="Date"
+                sortKey="maintenance_datenotes"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
               <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredLogs.length === 0 ? (
+            {sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-muted-foreground">
+                <TableCell colSpan={5} className="text-muted-foreground">
                   No maintenance logs match your search.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredLogs.map((log) => (
+              sorted.map((log) => (
                 <TableRow key={log.log_id}>
+                  <TableCell className="text-muted-foreground">
+                    #{log.log_id}
+                  </TableCell>
                   <TableCell className="font-medium">
                     {log.asset?.asset_type ?? "—"}
                   </TableCell>

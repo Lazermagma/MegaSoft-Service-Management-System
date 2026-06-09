@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { roleVariant, USER_ROLES } from "@/lib/constants/statuses";
 import type { AppUser, Department } from "@/lib/types/database";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { DataTableShell } from "@/components/shared/data-table-shell";
 import { TableFilters } from "@/components/shared/table-filters";
+import { SortableHeader } from "@/components/shared/sortable-header";
+import { useTableSort } from "@/hooks/use-table-sort";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -50,6 +52,28 @@ export function UsersTable({ users, departments }: UsersTableProps) {
     });
   }, [users, search, roleFilter]);
 
+  const getSortValue = useCallback((user: AppUser, key: string) => {
+    switch (key) {
+      case "user_id":
+        return user.user_id;
+      case "full_name":
+        return user.full_name;
+      case "email":
+        return user.email;
+      case "role":
+        return user.role;
+      case "department":
+        return user.department?.department_name ?? "";
+      default:
+        return null;
+    }
+  }, []);
+
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort(
+    filteredUsers,
+    getSortValue
+  );
+
   function openCreate() {
     setSelectedUser(null);
     setDialogOpen(true);
@@ -91,23 +115,58 @@ export function UsersTable({ users, departments }: UsersTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Full Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Department</TableHead>
+              <SortableHeader
+                label="ID"
+                sortKey="user_id"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+                className="w-16"
+              />
+              <SortableHeader
+                label="Full Name"
+                sortKey="full_name"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
+              <SortableHeader
+                label="Email"
+                sortKey="email"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
+              <SortableHeader
+                label="Role"
+                sortKey="role"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
+              <SortableHeader
+                label="Department"
+                sortKey="department"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={toggleSort}
+              />
               <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredUsers.length === 0 ? (
+            {sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-muted-foreground">
+                <TableCell colSpan={6} className="text-muted-foreground">
                   No users match your search.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredUsers.map((user) => (
+              sorted.map((user) => (
                 <TableRow key={user.user_id}>
+                  <TableCell className="text-muted-foreground">
+                    #{user.user_id}
+                  </TableCell>
                   <TableCell className="font-medium">{user.full_name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
