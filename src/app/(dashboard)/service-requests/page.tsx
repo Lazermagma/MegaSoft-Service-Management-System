@@ -21,9 +21,9 @@ export default async function ServiceRequestsPage() {
   const error =
     requestsError ?? usersError ?? techniciansError ?? assetsError;
 
-  const assetOptions = assets.map(({ asset_id, asset_name }) => ({
+  const assetOptions = assets.map(({ asset_id, asset_type }) => ({
     asset_id,
-    asset_name,
+    asset_type,
   }));
 
   return (

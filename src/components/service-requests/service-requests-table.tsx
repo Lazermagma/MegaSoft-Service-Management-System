@@ -42,7 +42,7 @@ type ServiceRequestsTableProps = {
   requests: ServiceRequest[];
   users: Pick<AppUser, "user_id" | "full_name">[];
   technicians: Pick<AppUser, "user_id" | "full_name">[];
-  assets: Pick<Asset, "asset_id" | "asset_name">[];
+  assets: Pick<Asset, "asset_id" | "asset_type">[];
 };
 
 function formatDate(value: string) {
@@ -160,7 +160,7 @@ export function ServiceRequestsTable({
                       variant={requestStatusVariant[request.status]}
                     />
                   </TableCell>
-                  <TableCell>{request.asset?.asset_name ?? "—"}</TableCell>
+                  <TableCell>{request.asset?.asset_type ?? "—"}</TableCell>
                   <TableCell>
                     {request.assigned_to?.full_name ?? "Unassigned"}
                   </TableCell>

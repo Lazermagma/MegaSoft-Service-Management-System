@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
-import { assetStatusVariant } from "@/lib/constants/statuses";
-import type { AppUser, Asset } from "@/lib/types/database";
-import { StatusBadge } from "@/components/shared/status-badge";
+import type { AppUser, Asset, MaintenanceLog } from "@/lib/types/database";
 import { DataTableShell } from "@/components/shared/data-table-shell";
-import { AssetFormDialog, useAssetActions } from "@/components/assets/asset-form-dialog";
+import {
+  MaintenanceLogFormDialog,
+  useMaintenanceLogActions,
+} from "@/components/maintenance-logs/maintenance-log-form-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,74 +24,75 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type AssetsTableProps = {
-  assets: Asset[];
-  users: Pick<AppUser, "user_id" | "full_name">[];
+type MaintenanceLogsTableProps = {
+  logs: MaintenanceLog[];
+  assets: Pick<Asset, "asset_id" | "asset_type">[];
+  technicians: Pick<AppUser, "user_id" | "full_name">[];
 };
 
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString();
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
-export function AssetsTable({ assets, users }: AssetsTableProps) {
-  const { removeAsset } = useAssetActions();
+export function MaintenanceLogsTable({
+  logs,
+  assets,
+  technicians,
+}: MaintenanceLogsTableProps) {
+  const { removeLog } = useMaintenanceLogActions();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [selectedLog, setSelectedLog] = useState<MaintenanceLog | null>(null);
 
   function openCreate() {
-    setSelectedAsset(null);
+    setSelectedLog(null);
     setDialogOpen(true);
   }
 
-  function openEdit(asset: Asset) {
-    setSelectedAsset(asset);
+  function openEdit(log: MaintenanceLog) {
+    setSelectedLog(log);
     setDialogOpen(true);
   }
 
   return (
     <>
       <DataTableShell
-        title="All Assets"
-        description="Track hardware, equipment, and user assignments."
+        title="All Maintenance Logs"
+        description="Record and review maintenance performed on assets."
         action={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            Add Asset
+            Add Log
           </Button>
         }
       >
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Purchase Date</TableHead>
-              <TableHead>Assigned To</TableHead>
+              <TableHead>Asset</TableHead>
+              <TableHead>Technician</TableHead>
+              <TableHead>Date</TableHead>
               <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {assets.length === 0 ? (
+            {logs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-muted-foreground">
-                  No assets found.
+                <TableCell colSpan={4} className="text-muted-foreground">
+                  No maintenance logs found.
                 </TableCell>
               </TableRow>
             ) : (
-              assets.map((asset) => (
-                <TableRow key={asset.asset_id}>
-                  <TableCell className="font-medium">{asset.asset_type}</TableCell>
-                  <TableCell>
-                    <StatusBadge
-                      label={asset.status}
-                      variant={assetStatusVariant[asset.status]}
-                    />
+              logs.map((log) => (
+                <TableRow key={log.log_id}>
+                  <TableCell className="font-medium">
+                    {log.asset?.asset_type ?? "—"}
                   </TableCell>
-                  <TableCell>{formatDate(asset.purchase_date)}</TableCell>
-                  <TableCell>
-                    {asset.assigned_user?.full_name ?? "—"}
-                  </TableCell>
+                  <TableCell>{log.technician?.full_name ?? "—"}</TableCell>
+                  <TableCell>{formatDate(log.maintenance_datenotes)}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger
@@ -101,7 +103,7 @@ export function AssetsTable({ assets, users }: AssetsTableProps) {
                         }
                       />
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEdit(asset)}>
+                        <DropdownMenuItem onClick={() => openEdit(log)}>
                           <Pencil className="size-4" />
                           Edit
                         </DropdownMenuItem>
@@ -110,10 +112,10 @@ export function AssetsTable({ assets, users }: AssetsTableProps) {
                           onClick={() => {
                             if (
                               confirm(
-                                `Delete this ${asset.asset_type}? This action cannot be undone.`
+                                "Delete this maintenance log? This action cannot be undone."
                               )
                             ) {
-                              removeAsset(asset.asset_id);
+                              removeLog(log.log_id);
                             }
                           }}
                         >
@@ -130,11 +132,12 @@ export function AssetsTable({ assets, users }: AssetsTableProps) {
         </Table>
       </DataTableShell>
 
-      <AssetFormDialog
+      <MaintenanceLogFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        users={users}
-        asset={selectedAsset}
+        assets={assets}
+        technicians={technicians}
+        log={selectedLog}
       />
     </>
   );

@@ -18,7 +18,7 @@ export async function getServiceRequests(): Promise<{
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("service_request")
+    .from("serviceRequest")
     .select(
       `
       request_id,
@@ -32,7 +32,7 @@ export async function getServiceRequests(): Promise<{
       asset_id,
       created_by:created_by_user_id(full_name),
       assigned_to:assigned_to_user_id(full_name),
-      asset:asset_id(asset_name)
+      asset:asset_id(asset_type)
     `
     )
     .order("created_at", { ascending: false });
@@ -46,7 +46,7 @@ export async function createServiceRequest(input: ServiceRequestFormInput) {
   if (configError) return { error: configError };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("service_request").insert(input);
+  const { error } = await supabase.from("serviceRequest").insert(input);
 
   if (error) return { error: error.message };
   revalidatePath("/service-requests");
@@ -63,7 +63,7 @@ export async function updateServiceRequest(
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("service_request")
+    .from("serviceRequest")
     .update(input)
     .eq("request_id", requestId);
 
@@ -82,7 +82,7 @@ export async function assignTechnician(
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("service_request")
+    .from("serviceRequest")
     .update({ assigned_to_user_id: technicianId })
     .eq("request_id", requestId);
 
@@ -101,7 +101,7 @@ export async function updateRequestStatus(
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("service_request")
+    .from("serviceRequest")
     .update({ status })
     .eq("request_id", requestId);
 
@@ -117,7 +117,7 @@ export async function deleteServiceRequest(requestId: number) {
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("service_request")
+    .from("serviceRequest")
     .delete()
     .eq("request_id", requestId);
 

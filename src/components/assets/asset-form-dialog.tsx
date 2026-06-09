@@ -31,7 +31,6 @@ type AssetFormDialogProps = {
 };
 
 const emptyForm: AssetFormInput = {
-  asset_name: "",
   asset_type: "",
   status: "Active",
   purchase_date: null,
@@ -54,7 +53,6 @@ export function AssetFormDialog({
   function resetForm(nextAsset?: Asset | null) {
     if (nextAsset) {
       setForm({
-        asset_name: nextAsset.asset_name,
         asset_type: nextAsset.asset_type,
         status: nextAsset.status,
         purchase_date: nextAsset.purchase_date,
@@ -100,18 +98,6 @@ export function AssetFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="asset_name">Asset Name</Label>
-            <Input
-              id="asset_name"
-              value={form.asset_name}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, asset_name: e.target.value }))
-              }
-              required
-            />
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="asset_type">Asset Type</Label>
             <Input

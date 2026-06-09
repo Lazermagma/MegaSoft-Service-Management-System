@@ -16,9 +16,9 @@ export async function getAssets(): Promise<{
   const { data, error } = await supabase
     .from("asset")
     .select(
-      "asset_id, asset_name, asset_type, status, purchase_date, assigned_user_id, assigned_user:assigned_user_id(full_name)"
+      "asset_id, asset_type, status, purchase_date, assigned_user_id, assigned_user:assigned_user_id(full_name)"
     )
-    .order("asset_name");
+    .order("asset_id");
 
   if (error) return { data: [], error: error.message };
   return { data: (data as unknown as Asset[]) ?? [], error: null };

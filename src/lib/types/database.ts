@@ -23,7 +23,6 @@ export type AppUser = {
 
 export type Asset = {
   asset_id: number;
-  asset_name: string;
   asset_type: string;
   status: AssetStatus;
   purchase_date: string | null;
@@ -43,16 +42,15 @@ export type ServiceRequest = {
   asset_id: number | null;
   created_by?: Pick<AppUser, "full_name"> | null;
   assigned_to?: Pick<AppUser, "full_name"> | null;
-  asset?: Pick<Asset, "asset_name"> | null;
+  asset?: Pick<Asset, "asset_type"> | null;
 };
 
 export type MaintenanceLog = {
   log_id: number;
   asset_id: number;
   technician_id: number;
-  maintenance_date: string;
-  notes: string | null;
-  asset?: Pick<Asset, "asset_name"> | null;
+  maintenance_datenotes: string;
+  asset?: Pick<Asset, "asset_type"> | null;
   technician?: Pick<AppUser, "full_name"> | null;
 };
 
@@ -64,7 +62,6 @@ export type UserFormInput = {
 };
 
 export type AssetFormInput = {
-  asset_name: string;
   asset_type: string;
   status: AssetStatus;
   purchase_date: string | null;
@@ -79,4 +76,10 @@ export type ServiceRequestFormInput = {
   created_by_user_id: number;
   assigned_to_user_id: number | null;
   asset_id: number | null;
+};
+
+export type MaintenanceLogFormInput = {
+  asset_id: number;
+  technician_id: number;
+  maintenance_datenotes: string;
 };

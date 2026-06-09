@@ -41,7 +41,7 @@ type ServiceRequestFormDialogProps = {
   onOpenChange: (open: boolean) => void;
   users: Pick<AppUser, "user_id" | "full_name">[];
   technicians: Pick<AppUser, "user_id" | "full_name">[];
-  assets: Pick<Asset, "asset_id" | "asset_name">[];
+  assets: Pick<Asset, "asset_id" | "asset_type">[];
   request?: ServiceRequest | null;
 };
 
@@ -278,7 +278,7 @@ export function ServiceRequestFormDialog({
                 <SelectItem value="none">None</SelectItem>
                 {assets.map((asset) => (
                   <SelectItem key={asset.asset_id} value={String(asset.asset_id)}>
-                    {asset.asset_name}
+                    {asset.asset_type} (#{asset.asset_id})
                   </SelectItem>
                 ))}
               </SelectContent>

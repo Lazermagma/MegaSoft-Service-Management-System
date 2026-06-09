@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MegaSoft Enterprise Service & Asset Management System
+
+A full-stack internal tool for managing **users, assets, service requests, and maintenance logs**. Built as a clean, modern dashboard with full CRUD on every module and a service-request assignment + status workflow.
+
+## Tech Stack
+
+- **Next.js 16** (App Router) + **React 19** + **TypeScript**
+- **Tailwind CSS v4** + **shadcn/ui** components
+- **Supabase** (PostgreSQL) — accessed directly via `@supabase/supabase-js` / `@supabase/ssr` (no ORM)
+- **Server Actions** for all mutations (no separate API layer)
+
+## Features
+
+| Module | Capabilities |
+|--------|--------------|
+| **Dashboard** | Live counts (users, assets, open requests, logs) + recent open requests |
+| **Users** | Create / edit / delete, role & department |
+| **Assets** | Create / edit / delete, status & user assignment |
+| **Service Requests** | Create / edit / delete, **assign technician**, **update status** (Open → In Progress → Resolved → Closed) |
+| **Maintenance Logs** | Create / edit / delete, linked to asset + technician |
+
+## Data Model (ERD)
+
+Five tables already provisioned on the Supabase project:
+
+- `department` — departments
+- `user` — employees, technicians, admins (FK → department)
+- `asset` — hardware/equipment (FK → assigned user)
+- `serviceRequest` — tickets (FKs → creator, assignee, asset)
+- `maintenancelog` — maintenance history (FKs → asset, technician)
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure environment variables
+
+The database schema already lives on the Supabase project. Copy the example file and fill in your project values (found in **Project Settings → API**):
+
+```bash
+cp .env.local.example .env.local
+```
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```
+
+### 3. Run the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> If the environment variables are missing, the app still runs and each page shows a clear setup message instead of crashing.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+src/
+  actions/                 Server actions (data fetching + mutations)
+    users.ts
+    assets.ts
+    service-requests.ts
+    maintenance-logs.ts
+    dashboard.ts
+  app/
+    (dashboard)/           Dashboard layout + module pages
+    page.tsx               Landing page
+  components/
+    <module>/              Tables + form dialogs per module
+    shared/                StatusBadge, DataTableShell
+    layout/                Sidebar, page header
+    ui/                    shadcn primitives
+  lib/
+    supabase/              Browser + server clients, config helper
+    types/database.ts      Shared types
+    constants/statuses.ts  Enums + badge variants
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Architecture Notes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Server Components** fetch data on the server; **Client Components** handle interactive tables, dialogs, and forms.
+- All writes go through **Server Actions** that call `revalidatePath` to refresh affected pages.
+- RLS policies are intentionally permissive for this demo (no auth layer).
